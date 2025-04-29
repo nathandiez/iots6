@@ -20,7 +20,7 @@ provider "proxmox" {
 variable "vm_names" {
   description = "A list of Virtual Machine names to create"
   type        = list(string)
-  default     = ["pxiots"]
+  default     = ["nediots"]
 }
 
 # Define VM resources using for_each based on the variable
@@ -86,8 +86,8 @@ resource "proxmox_virtual_environment_vm" "linux_vm" {
     }
 
     user_account {
-      username = "eric"
-      keys     = [ file("~/.ssh/id_ed25519v2.pub") ]
+      username = "nathan"
+      keys     = [ file("~/.ssh/id_ed25519.pub") ]
     }
   }
 }

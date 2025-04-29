@@ -8,7 +8,7 @@ set -e
 
 # --- Configuration ---
 # Set the base hostname for the target server (without .local)
-TARGET_HOSTNAME="pxiots"
+TARGET_HOSTNAME=nediots"
 # --- End Configuration ---
 
 # --- Process command line arguments ---
@@ -97,14 +97,14 @@ cd "${PROJECT_ROOT}"
 # Update the hosts file with the new IP
 mkdir -p services/ansible/inventory
 echo "[iot_servers]" > services/ansible/inventory/hosts
-echo "pxiots ansible_host=$IP" >> services/ansible/inventory/hosts
+echo "nediots ansible_host=$IP" >> services/ansible/inventory/hosts
 echo "" >> services/ansible/inventory/hosts
 echo "[all:vars]" >> services/ansible/inventory/hosts
 echo "ansible_python_interpreter=/usr/bin/python3" >> services/ansible/inventory/hosts
 
 # Wait for SSH to become available on the VM
 echo "Waiting for SSH to become available on ${TARGET_HOSTNAME} ($IP)..."
-while ! ssh -o StrictHostKeyChecking=no -o BatchMode=yes -o ConnectTimeout=5 eric@"$IP" echo ready 2>/dev/null; do
+while ! ssh -o StrictHostKeyChecking=no -o BatchMode=yes -o ConnectTimeout=5 nathan@"$IP" echo ready 2>/dev/null; do
   echo "Still waiting for SSH..."
   sleep 5
 done
