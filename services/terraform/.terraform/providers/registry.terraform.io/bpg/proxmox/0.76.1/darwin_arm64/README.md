@@ -78,9 +78,10 @@ The following assumptions are made about the test environment:
 Create `example/terraform.tfvars` with the following variables:
 
 ```sh
-virtual_environment_endpoint                 = "https://pve.example.doc:8006/"
-virtual_environment_ssh_username             = "terraform"
-virtual_environment_api_token                = "root@pam!terraform=00000000-0000-0000-0000-000000000000"
+export PROXMOX_VE_ENDPOINT="https://192.168.5.5:8006"
+export PROXMOX_VE_API_TOKEN="root@pam\!terraform=e6e3e092-170e-45a9-a439-7ae4b6e7aaa8"
+export PROXMOX_VE_USERNAME="root@pam"
+export PROXMOX_VE_PASSWORD="er123"
 ```
 
 Then run `make example` to deploy the example resources.

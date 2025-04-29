@@ -8,7 +8,7 @@ set -e
 
 # --- Configuration ---
 # Set the base hostname for the target server (without .local)
-TARGET_HOSTNAME=nediots"
+TARGET_HOSTNAME="nediots"
 # --- End Configuration ---
 
 # --- Process command line arguments ---

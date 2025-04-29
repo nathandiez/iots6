@@ -1,5 +1,5 @@
 [iot_servers]
-nediots ansible_host=192.168.6.81
+nediots ansible_host=192.168.6.82
 
 [all:vars]
 ansible_python_interpreter=/usr/bin/python3
