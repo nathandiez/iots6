@@ -35,3 +35,6 @@ web-frontend/build/
 # Backup files
 *~
 *.orig
+
+# set env variables .sh
+set-proxmod-env.sh

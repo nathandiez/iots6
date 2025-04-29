@@ -49,7 +49,7 @@ echo "----------------------------------------"
 PROJECT_ROOT=$(pwd)
 
 # Source the Proxmox environment variables
-source ./services/terraform/set-proxmox-env.sh
+source ./set-proxmox-env.sh
 
 # Change into the terraform directory
 cd "${PROJECT_ROOT}/services/terraform"
