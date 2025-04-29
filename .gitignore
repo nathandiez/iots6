@@ -1,0 +1,37 @@
+# General
+*.log
+*.pyc
+*.pyo
+__pycache__/
+*.swp
+.DS_Store
+*.bak
+*.tmp
+*.old
+
+# Python virtual environments
+venv/
+.env/
+.envrc
+
+# Node (frontend)
+web-frontend/node_modules/
+web-frontend/build/
+
+# Terraform
+*.tfstate*
+
+
+# Ansible temporary files
+*.retry
+
+
+# OS/Editor files
+*.sublime-project
+*.sublime-workspace
+.vscode/
+.idea/
+
+# Backup files
+*~
+*.orig

@@ -1,0 +1,5 @@
+---
+# main.yml - Main playbook for deploying all IoT services
+
+- name: Include Mosquitto MQTT broker setup
+  import_playbook: mosquitto.yml
