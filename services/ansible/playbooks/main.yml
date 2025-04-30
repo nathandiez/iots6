@@ -1,5 +1,11 @@
 ---
 # main.yml - Main playbook for deploying all IoT services
 
+- name: Include TimescaleDB setup
+  import_playbook: timescaledb.yml
+
 - name: Include Mosquitto MQTT broker setup
   import_playbook: mosquitto.yml
+
+- name: Include IoT Service setup
+  import_playbook: iot_service.yml
