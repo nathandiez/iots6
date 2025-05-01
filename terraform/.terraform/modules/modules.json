@@ -1,0 +1,1 @@
+{"Modules":[{"Key":"","Source":"","Dir":"."},{"Key":"iot_server","Source":"./proxmox-module","Dir":"proxmox-module"},{"Key":"ned_iots6_server","Source":"./proxmox-module","Dir":"proxmox-module"}]}

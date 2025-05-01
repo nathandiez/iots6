@@ -12,17 +12,6 @@
     schema_dir: /home/{{ ansible_user | default('nathan') }}/timescaledb_schema
 
   tasks:
-    - name: Check if Docker is installed
-      ansible.builtin.command: which docker
-      register: docker_check
-      failed_when: false
-      changed_when: false
-
-    - name: Fail if Docker is not installed
-      ansible.builtin.fail:
-        msg: "Docker is not installed. Please run the base.yml playbook first."
-      when: docker_check.rc != 0
-
     - name: Create directories
       ansible.builtin.file:
         path: "{{ item }}"
@@ -58,12 +47,6 @@
           GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO iotuser;
           GRANT ALL PRIVILEGES ON SCHEMA public TO iotuser;
         mode: '0644'
-      become: yes
-
-    - name: Set up Docker network
-      community.docker.docker_network:
-        name: iot_network
-        state: present
       become: yes
 
     - name: Start TimescaleDB container

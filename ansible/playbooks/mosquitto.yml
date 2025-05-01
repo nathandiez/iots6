@@ -11,82 +11,6 @@
 
   tasks:
     # --------------------------------------------------------------------------
-    # Wait for System Readiness
-    # --------------------------------------------------------------------------
-    - name: Wait for apt/dpkg locks to be released
-      ansible.builtin.shell: while lsof /var/lib/dpkg/lock-frontend >/dev/null 2>&1; do sleep 5; done
-      changed_when: false
-      timeout: 300  # 5 minute timeout
-      # become: yes # Might not be needed if user can run lsof
-
-    - name: Wait for cloud-init to complete
-      ansible.builtin.shell: while [ ! -f /var/lib/cloud/instance/boot-finished ]; do sleep 5; done
-      changed_when: false
-      timeout: 300  # 5 minute timeout
-
-    # --------------------------------------------------------------------------
-    # Docker Installation
-    # --------------------------------------------------------------------------
-    - name: Update apt cache
-      ansible.builtin.apt:
-        update_cache: yes
-        cache_valid_time: 3600
-      become: yes
-
-    - name: Install required dependencies for Docker
-      ansible.builtin.apt:
-        name:
-          - apt-transport-https
-          - ca-certificates
-          - curl
-          - gnupg
-          - lsb-release
-        state: present
-      become: yes
-
-    - name: Add Docker GPG key
-      ansible.builtin.apt_key:
-        url: https://download.docker.com/linux/ubuntu/gpg
-        state: present
-      become: yes
-
-    - name: Add Docker repository
-      ansible.builtin.apt_repository:
-        repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable
-        state: present
-        filename: docker # Explicit filename
-      become: yes
-
-    - name: Install Docker packages
-      ansible.builtin.apt:
-        name:
-          - docker-ce
-          - docker-ce-cli
-          - containerd.io
-          - docker-compose-plugin
-        state: present
-        update_cache: yes
-      register: docker_install_result
-      until: docker_install_result is succeeded
-      retries: 5
-      delay: 15
-      become: yes
-
-    - name: Make sure Docker service is running and enabled
-      ansible.builtin.service:
-        name: docker
-        state: started
-        enabled: yes
-      become: yes
-
-    - name: Add deployment user to docker group for non-sudo docker commands
-      ansible.builtin.user:
-        name: "{{ ansible_user | default('nathan') }}" # Use ansible_user which is 'nathan' from ansible.cfg
-        groups: docker
-        append: yes
-      become: yes
-
-    # --------------------------------------------------------------------------
     # Mosquitto Configuration
     # --------------------------------------------------------------------------
     - name: Create Mosquitto configuration directory
@@ -162,6 +86,8 @@
         image: eclipse-mosquitto:latest
         state: started
         restart_policy: unless-stopped
+        networks:
+          - name: iot_network
         published_ports:
           - "1883:1883"  # MQTT
           - "9001:9001"  # WebSockets (if needed)
@@ -172,14 +98,12 @@
           # Data and log volumes remain read-write
           - "{{ mosquitto_data_dir }}:/mosquitto/data:rw"
           - "{{ mosquitto_log_dir }}:/mosquitto/log:rw"
-        restart: yes # Ensures container restarts if stopped manually or on error (unless stopped)
-      become: yes # Run docker commands as root
+        restart: yes
+      become: yes
 
     # --------------------------------------------------------------------------
     # Verification
     # --------------------------------------------------------------------------
-    # Note: Installing clients on host is not strictly needed for docker exec check,
-    # but can be useful for manual host debugging. Keep it for now.
     - name: Install mosquitto-clients for testing (on host)
       ansible.builtin.apt:
         name: mosquitto-clients
@@ -188,27 +112,20 @@
 
     - name: Wait a few seconds for Mosquitto service inside container to stabilize
       ansible.builtin.pause:
-        seconds: 5 # Adjust as needed, start with 5 seconds
+        seconds: 5
 
     - name: Verify Mosquitto is running (via docker exec)
-      # Execute mosquitto_sub inside the container with debug, check output for CONNACK
       ansible.builtin.command: docker exec {{ mosquitto_container_name }} mosquitto_sub -h localhost -t 'test/topic' -C 1 -W 3 -d
-      register: mqtt_test_exec # Register the whole result
+      register: mqtt_test_exec
       changed_when: false
-      failed_when: false # Don't fail the playbook if test fails
-      ignore_errors: true # Continue even if test fails
-      become: yes # Use become to ensure user can run 'docker exec'
+      failed_when: false
+      ignore_errors: true
+      become: yes
 
     - name: Check verification command output for success
-      # Check if the stdout from the command contains the CONNACK message
       ansible.builtin.set_fact:
         mqtt_connected: "{{ 'CONNACK' in mqtt_test_exec.stdout }}"
 
     - name: Show MQTT connection status
       ansible.builtin.debug:
-        # Use the mqtt_connected fact to determine success
         msg: "MQTT broker status: {{ 'Connected successfully (verified via docker exec)' if mqtt_connected else 'Connection failed - check container logs or docker exec command output' }}"
-        # You can uncomment the line below to see the full output of the verification command for debugging
-        # var: mqtt_test_exec
-
-# --- Handlers Section Removed ---
