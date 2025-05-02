@@ -23,11 +23,18 @@ cd "$(dirname "$0")/terraform"
 # Run Terraform if in nuke mode
 if [ "$NUKE_MODE" = true ]; then
   echo "Starting with a clean slate..."
-  # Don't delete tfstate when using Azure - it helps with cleanup
-  # rm -f terraform.tfstate terraform.tfstate.backup
   
+  # Initialize Terraform first
   echo "Initializing Terraform..."
   terraform init
+  
+  # Try targeted destruction first
+  echo "Removing previous resources..."
+  terraform destroy -target=azurerm_linux_virtual_machine.vm -auto-approve || true
+  terraform destroy -target=azurerm_network_interface_security_group_association.nsg_assoc -auto-approve || true
+  terraform destroy -target=azurerm_network_interface.nic -auto-approve || true
+  terraform destroy -target=azurerm_public_ip.public_ip -auto-approve || true
+  terraform destroy -auto-approve || true
   
   echo "Creating new VM in Azure..."
   terraform apply -auto-approve

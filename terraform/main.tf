@@ -17,6 +17,10 @@ resource "azurerm_resource_group" "rg" {
   name     = "rg-iot-infrastructure"
   location = var.location
   tags     = var.tags
+  
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 # Create virtual network
@@ -26,6 +30,10 @@ resource "azurerm_virtual_network" "vnet" {
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
   tags                = var.tags
+  
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 # Create subnet
@@ -34,16 +42,24 @@ resource "azurerm_subnet" "subnet" {
   resource_group_name  = azurerm_resource_group.rg.name
   virtual_network_name = azurerm_virtual_network.vnet.name
   address_prefixes     = ["10.0.1.0/24"]
+  
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 # Create public IP
 resource "azurerm_public_ip" "public_ip" {
-  name                = "pip-iot"
+  name                = "ned-iot"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
-  allocation_method   = "Dynamic"
+  allocation_method   = "Static"
   domain_name_label   = "nediots"
   tags                = var.tags
+  
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 # Create Network Security Group
@@ -53,7 +69,7 @@ resource "azurerm_network_security_group" "nsg" {
   resource_group_name = azurerm_resource_group.rg.name
   tags                = var.tags
 
-  # Allow SSH
+  # Allow SSH from your IP address only
   security_rule {
     name                       = "SSH"
     priority                   = 1001
@@ -62,11 +78,11 @@ resource "azurerm_network_security_group" "nsg" {
     protocol                   = "Tcp"
     source_port_range          = "*"
     destination_port_range     = "22"
-    source_address_prefix      = "*"
+    source_address_prefix      = "151.210.118.142/32"  # Replace with your IP
     destination_address_prefix = "*"
   }
 
-  # Allow HTTP/8080 for web services
+  # Allow HTTP/8080 for web services from your IP
   security_rule {
     name                       = "HTTP-8080"
     priority                   = 1002
@@ -75,11 +91,11 @@ resource "azurerm_network_security_group" "nsg" {
     protocol                   = "Tcp"
     source_port_range          = "*"
     destination_port_range     = "8080"
-    source_address_prefix      = "*"
+    source_address_prefix      = "151.210.118.142/32"  
     destination_address_prefix = "*"
   }
 
-  # Allow MQTT (1883)
+  # Allow MQTT (1883) from necessary IPs only
   security_rule {
     name                       = "MQTT"
     priority                   = 1003
@@ -88,34 +104,38 @@ resource "azurerm_network_security_group" "nsg" {
     protocol                   = "Tcp"
     source_port_range          = "*"
     destination_port_range     = "1883"
-    source_address_prefix      = "*"
+    source_address_prefixes    = ["151.210.118.142/32", "52.226.133.220/32",]  
     destination_address_prefix = "*"
   }
 
-  # Allow MQTT over WebSockets (9001)
-  security_rule {
-    name                       = "MQTT-WS"
-    priority                   = 1004
-    direction                  = "Inbound"
-    access                     = "Allow"
-    protocol                   = "Tcp"
-    source_port_range          = "*"
-    destination_port_range     = "9001"
-    source_address_prefix      = "*"
-    destination_address_prefix = "*"
-  }
+# Allow MQTT over WebSockets (9001) from specific IPs
+security_rule {
+  name                       = "MQTT-WS"
+  priority                   = 1004
+  direction                  = "Inbound"
+  access                     = "Allow"
+  protocol                   = "Tcp"
+  source_port_range          = "*"
+  destination_port_range     = "9001"
+  source_address_prefixes    = ["151.210.118.142/32", "52.226.133.220/32",]  
+  destination_address_prefix = "*"
+}
 
-  # Allow PostgreSQL (5432)
-  security_rule {
-    name                       = "PostgreSQL"
-    priority                   = 1005
-    direction                  = "Inbound"
-    access                     = "Allow"
-    protocol                   = "Tcp"
-    source_port_range          = "*"
-    destination_port_range     = "5432"
-    source_address_prefix      = "*"
-    destination_address_prefix = "*"
+# Allow PostgreSQL (5432) from specific IPs
+security_rule {
+  name                       = "PostgreSQL"
+  priority                   = 1005
+  direction                  = "Inbound"
+  access                     = "Allow"
+  protocol                   = "Tcp"
+  source_port_range          = "*"
+  destination_port_range     = "5432"
+  source_address_prefixes    = ["151.210.118.142/32", "52.226.133.220/32",]  
+  destination_address_prefix = "*"
+}
+  
+  lifecycle {
+    create_before_destroy = true
   }
 }
 
@@ -129,8 +149,19 @@ resource "azurerm_network_interface" "nic" {
   ip_configuration {
     name                          = "internal"
     subnet_id                     = azurerm_subnet.subnet.id
-    private_ip_address_allocation = "Dynamic"
+    private_ip_address_allocation = "Static"
+    private_ip_address            = "10.0.1.10"
     public_ip_address_id          = azurerm_public_ip.public_ip.id
+  }
+
+  # Add explicit dependency
+  depends_on = [
+    azurerm_public_ip.public_ip,
+    azurerm_subnet.subnet
+  ]
+  
+  lifecycle {
+    create_before_destroy = true
   }
 }
 
@@ -138,6 +169,16 @@ resource "azurerm_network_interface" "nic" {
 resource "azurerm_network_interface_security_group_association" "nsg_assoc" {
   network_interface_id      = azurerm_network_interface.nic.id
   network_security_group_id = azurerm_network_security_group.nsg.id
+
+  # Add explicit dependency
+  depends_on = [
+    azurerm_network_interface.nic,
+    azurerm_network_security_group.nsg
+  ]
+  
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 # Create virtual machine
@@ -194,4 +235,14 @@ systemctl restart avahi-daemon
 systemctl enable avahi-daemon
 EOT
   )
+
+  # Add explicit dependency
+  depends_on = [
+    azurerm_network_interface.nic,
+    azurerm_network_interface_security_group_association.nsg_assoc
+  ]
+  
+  lifecycle {
+    create_before_destroy = true
+  }
 }
