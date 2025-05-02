@@ -20,9 +20,18 @@ source ./set-azure-env.sh
 # Change to terraform directory
 cd "$(dirname "$0")/terraform"
 
+# Get the current IP address for host key removal
+CURRENT_IP=$(terraform output -raw public_ip 2>/dev/null || echo "")
+
 # Run Terraform if in nuke mode
 if [ "$NUKE_MODE" = true ]; then
   echo "Starting with a clean slate..."
+  
+  # Remove host key if we have a current IP
+  if [ -n "$CURRENT_IP" ] && [ "$CURRENT_IP" != "null" ]; then
+    echo "Removing SSH host key for $CURRENT_IP..."
+    ssh-keygen -R "$CURRENT_IP"
+  fi
   
   # Initialize Terraform first
   echo "Initializing Terraform..."

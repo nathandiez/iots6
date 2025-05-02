@@ -7,11 +7,6 @@ terraform {
     }
   }
 }
-# Import the persistent public IP
-data "azurerm_public_ip" "persistent_ip" {
-  name                = "ned-iot-persistent"
-  resource_group_name = "rg-persistent-resources"
-}
 
 provider "azurerm" {
   features {}
@@ -156,7 +151,7 @@ resource "azurerm_network_interface" "nic" {
     subnet_id                     = azurerm_subnet.subnet.id
     private_ip_address_allocation = "Static"
     private_ip_address            = "10.0.1.10"
-    public_ip_address_id          = data.azurerm_public_ip.persistent_ip.id
+    public_ip_address_id          = azurerm_public_ip.public_ip.id
   }
 
   # Add explicit dependency

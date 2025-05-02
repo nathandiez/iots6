@@ -20,22 +20,22 @@ output "private_ip" {
 
 output "public_ip" {
   description = "Public IP address of the VM"
-  value       = data.azurerm_public_ip.persistent_ip.ip_address
+  value       = azurerm_public_ip.public_ip.ip_address
 }
 
 output "server_ip" {
   description = "Primary IP address (kept for compatibility with existing scripts)"
-  value       = data.azurerm_public_ip.persistent_ip.ip_address
+  value       = azurerm_public_ip.public_ip.ip_address
 }
 
 output "vm_ip_addresses" {
   description = "IP addresses of the VM (for compatibility with existing scripts)"
   value       = {
-    nediots = { "0" = [data.azurerm_public_ip.persistent_ip.ip_address] }
+    nediots = { "0" = [azurerm_public_ip.public_ip.ip_address] }
   }
 }
 
 output "fqdn" {
   description = "Fully qualified domain name"
-  value       = data.azurerm_public_ip.persistent_ip.fqdn
+  value       = azurerm_public_ip.public_ip.fqdn
 }
