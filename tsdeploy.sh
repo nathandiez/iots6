@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-IP=${1:-$(terraform -chdir=services/terraform output -json vm_ip_addresses | jq -r '.nediots | .[][] | select(. != "127.0.0.1")' | head -n 1)}
+IP=${1:-$(terraform -chdir=terraform output -json vm_ip_addresses | jq -r '.nediots | .[][] | select(. != "127.0.0.1")' | head -n 1)}
 
 if [ -z "$IP" ] || [ "$IP" == "null" ]; then
   echo "Error: No valid IP address. Provide IP as argument."
@@ -10,16 +10,16 @@ fi
 
 echo "Deploying TS to $IP"
 
-mkdir -p services/ansible/inventory
-cat > services/ansible/inventory/hosts << EOF
+mkdir -p ansible/inventory
+cat > ansible/inventory/hosts << EOFHOSTS
 [iot_servers]
 nediots ansible_host=$IP
 
 [all:vars]
 ansible_python_interpreter=/usr/bin/python3
-EOF
+EOFHOSTS
 
-cd services/ansible
-ansible-playbook playbooks/timescaledb.yml
+cd ansible
+ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook playbooks/timescaledb.yml
 
-echo "TS deployment completed!"
+echo "TimescaleDB deployment completed!"
