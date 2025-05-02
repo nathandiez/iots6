@@ -7,13 +7,13 @@ variable "location" {
 variable "vm_size" {
   description = "Size of the virtual machine"
   type        = string
-  default     = "Standard_B2s"  # 2 vCPUs, 4 GB RAM - good for IoT services
+  default     = "Standard_B2s" # 2 vCPUs, 4 GB RAM - good for IoT services
 }
 
 variable "tags" {
   description = "Tags to apply to the resources"
   type        = map(string)
-  default     = {
+  default = {
     "Environment" = "Development"
     "Project"     = "IoT"
     "ManagedBy"   = "Terraform"
@@ -35,5 +35,5 @@ variable "ssh_username" {
 variable "ssh_public_key_path" {
   description = "Path to SSH public key file"
   type        = string
-  default     = "~/.ssh/id_rsa.pub"  # Use RSA keys with Azure
+  default     = "~/.ssh/id_rsa.pub" # Use RSA keys with Azure
 }

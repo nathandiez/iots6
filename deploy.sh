@@ -17,6 +17,16 @@ fi
 # Source Azure environment variables
 source ./set-azure-env.sh
 
+# Verify persistent IP exists before doing anything else
+echo "Verifying persistent IP exists..."
+az network public-ip show --name ned-iot-persistent --resource-group rg-persistent-resources >/dev/null 2>&1
+if [ $? -ne 0 ]; then
+  echo "ERROR: Persistent IP 'ned-iot-persistent' not found in resource group 'rg-persistent-resources'"
+  echo "Please run the setup-persistent-ip-only.sh script first."
+  exit 1
+fi
+echo "✅ Persistent IP found, continuing with deployment"
+
 # Change to terraform directory
 cd "$(dirname "$0")/terraform"
 
@@ -37,13 +47,22 @@ if [ "$NUKE_MODE" = true ]; then
   echo "Initializing Terraform..."
   terraform init
   
-  # Try targeted destruction first
-  echo "Removing previous resources..."
-  terraform destroy -target=azurerm_linux_virtual_machine.vm -auto-approve || true
-  terraform destroy -target=azurerm_network_interface_security_group_association.nsg_assoc -auto-approve || true
-  terraform destroy -target=azurerm_network_interface.nic -auto-approve || true
-  terraform destroy -target=azurerm_public_ip.public_ip -auto-approve || true
-  terraform destroy -auto-approve || true
+  # Destroy VM and related resources only - NEVER touch the resource group!
+  echo "Removing previous VM resources..."
+  
+  # First destroy the VM since other resources depend on it
+  terraform destroy -target="azurerm_linux_virtual_machine.vm" -auto-approve || true
+  
+  # Then destroy other resources in dependency order
+  terraform destroy -target="azurerm_network_interface_security_group_association.nsg_assoc" -auto-approve || true
+  terraform destroy -target="azurerm_network_interface.nic" -auto-approve || true
+  terraform destroy -target="azurerm_network_security_group.nsg" -auto-approve || true
+  terraform destroy -target="azurerm_subnet.subnet" -auto-approve || true
+  terraform destroy -target="azurerm_virtual_network.vnet" -auto-approve || true
+  terraform destroy -target="azurerm_public_ip.public_ip" -auto-approve || true
+  
+  # IMPORTANT: Never try to destroy the resource group or run a general destroy
+  # without targets as it will hang trying to delete the resource group
   
   echo "Creating new VM in Azure..."
   terraform apply -auto-approve
@@ -72,7 +91,7 @@ if [ -z "$IP" ] || [ "$IP" == "null" ]; then
   exit 1
 fi
 
-echo "VM IP address: $IP"
+echo "VM public IP: $IP"
 
 # Update Ansible inventory
 cd ../ansible

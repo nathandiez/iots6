@@ -30,7 +30,7 @@ output "server_ip" {
 
 output "vm_ip_addresses" {
   description = "IP addresses of the VM (for compatibility with existing scripts)"
-  value       = {
+  value = {
     nediots = { "0" = [data.azurerm_public_ip.persistent_ip.ip_address] }
   }
 }

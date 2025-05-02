@@ -22,9 +22,10 @@ resource "azurerm_resource_group" "rg" {
   name     = "rg-iot-infrastructure"
   location = var.location
   tags     = var.tags
-  
+
   lifecycle {
     create_before_destroy = true
+    prevent_destroy = true 
   }
 }
 
@@ -35,7 +36,7 @@ resource "azurerm_virtual_network" "vnet" {
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
   tags                = var.tags
-  
+
   lifecycle {
     create_before_destroy = true
   }
@@ -47,7 +48,7 @@ resource "azurerm_subnet" "subnet" {
   resource_group_name  = azurerm_resource_group.rg.name
   virtual_network_name = azurerm_virtual_network.vnet.name
   address_prefixes     = ["10.0.1.0/24"]
-  
+
   lifecycle {
     create_before_destroy = true
   }
@@ -61,7 +62,7 @@ resource "azurerm_public_ip" "public_ip" {
   allocation_method   = "Static"
   domain_name_label   = "nediots"
   tags                = var.tags
-  
+
   lifecycle {
     create_before_destroy = true
   }
@@ -83,7 +84,7 @@ resource "azurerm_network_security_group" "nsg" {
     protocol                   = "Tcp"
     source_port_range          = "*"
     destination_port_range     = "22"
-    source_address_prefix      = "151.210.118.142/32"  # Replace with your IP
+    source_address_prefix      = "151.210.118.142/32" # Replace with your IP
     destination_address_prefix = "*"
   }
 
@@ -96,7 +97,7 @@ resource "azurerm_network_security_group" "nsg" {
     protocol                   = "Tcp"
     source_port_range          = "*"
     destination_port_range     = "8080"
-    source_address_prefix      = "151.210.118.142/32"  
+    source_address_prefix      = "151.210.118.142/32"
     destination_address_prefix = "*"
   }
 
@@ -109,36 +110,36 @@ resource "azurerm_network_security_group" "nsg" {
     protocol                   = "Tcp"
     source_port_range          = "*"
     destination_port_range     = "1883"
-    source_address_prefixes    = ["151.210.118.142/32", "52.226.133.220/32",]  
+    source_address_prefixes    = ["151.210.118.142/32", "52.226.133.220/32", ]
     destination_address_prefix = "*"
   }
 
-# Allow MQTT over WebSockets (9001) from specific IPs
-security_rule {
-  name                       = "MQTT-WS"
-  priority                   = 1004
-  direction                  = "Inbound"
-  access                     = "Allow"
-  protocol                   = "Tcp"
-  source_port_range          = "*"
-  destination_port_range     = "9001"
-  source_address_prefixes    = ["151.210.118.142/32", "52.226.133.220/32",]  
-  destination_address_prefix = "*"
-}
+  # Allow MQTT over WebSockets (9001) from specific IPs
+  security_rule {
+    name                       = "MQTT-WS"
+    priority                   = 1004
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "9001"
+    source_address_prefixes    = ["151.210.118.142/32", "52.226.133.220/32", ]
+    destination_address_prefix = "*"
+  }
 
-# Allow PostgreSQL (5432) from specific IPs
-security_rule {
-  name                       = "PostgreSQL"
-  priority                   = 1005
-  direction                  = "Inbound"
-  access                     = "Allow"
-  protocol                   = "Tcp"
-  source_port_range          = "*"
-  destination_port_range     = "5432"
-  source_address_prefixes    = ["151.210.118.142/32", "52.226.133.220/32",]  
-  destination_address_prefix = "*"
-}
-  
+  # Allow PostgreSQL (5432) from specific IPs
+  security_rule {
+    name                       = "PostgreSQL"
+    priority                   = 1005
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "5432"
+    source_address_prefixes    = ["151.210.118.142/32", "52.226.133.220/32", ]
+    destination_address_prefix = "*"
+  }
+
   lifecycle {
     create_before_destroy = true
   }
@@ -164,7 +165,7 @@ resource "azurerm_network_interface" "nic" {
     azurerm_public_ip.public_ip,
     azurerm_subnet.subnet
   ]
-  
+
   lifecycle {
     create_before_destroy = true
   }
@@ -180,7 +181,7 @@ resource "azurerm_network_interface_security_group_association" "nsg_assoc" {
     azurerm_network_interface.nic,
     azurerm_network_security_group.nsg
   ]
-  
+
   lifecycle {
     create_before_destroy = true
   }
@@ -246,7 +247,7 @@ EOT
     azurerm_network_interface.nic,
     azurerm_network_interface_security_group_association.nsg_assoc
   ]
-  
+
   lifecycle {
     create_before_destroy = true
   }
