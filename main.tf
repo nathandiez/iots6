@@ -8,20 +8,20 @@ terraform {
 }
 
 provider "proxmox" {
-  endpoint = "https://192.168.5.6:8006"
+  endpoint = "https://YOUR_PROXMOX_IP:8006"
   insecure = true
 }
 
 module "ned_iots6_server" {
   source = "./vm-module"
   
-  vm_name     = "nediots6"
-  mac_address = "52:54:00:12:33:02"
+  vm_name     = "your-vm-name"
+  mac_address = "52:54:00:12:34:56"
   tags        = ["terraform-managed", "iot-system"]
   cores       = 4
   memory      = 4096
   disk_size   = 40
-  dns_servers = ["192.168.5.1", "8.8.8.8"]
+  dns_servers = ["YOUR_DNS_SERVER", "8.8.8.8"]
 }
 
 output "server_ip" {

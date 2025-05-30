@@ -2,7 +2,7 @@
 # deploy.sh - Simple deployment script
 set -e
 
-TARGET_HOSTNAME="nediots6"
+TARGET_HOSTNAME="your-vm-name"
 
 NUKE_MODE=false
 if [[ "$1" == "--nuke" ]]; then
