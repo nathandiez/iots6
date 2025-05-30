@@ -17,24 +17,41 @@ venv/
 # Node (frontend)
 web-frontend/node_modules/
 web-frontend/build/
+web-frontend/dist/
 
 # Terraform
 *.tfstate*
-
+.terraform/
+.terraform.lock.hcl
 
 # Ansible temporary files
 *.retry
-
 
 # OS/Editor files
 *.sublime-project
 *.sublime-workspace
 .vscode/
 .idea/
+.micropico
 
 # Backup files
 *~
 *.orig
+backup-*/
 
-# set env variables .sh
-set-proxmod-env.sh
+# Environment variables / secrets
+set-proxmox-env.sh
+*env.sh
+*.env
+.env.*
+
+# Docker
+.dockerignore
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Thumbnails
+._*
