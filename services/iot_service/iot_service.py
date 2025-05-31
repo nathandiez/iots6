@@ -71,62 +71,83 @@ def store_sensor_data(data):
         # Ensure event_type exists, provide default if not (optional safety)
         db_data.setdefault("event_type", "unknown")
 
-        # Convert None to acceptable SQL values
-        for key in ("temperature", "humidity", "pressure"):
+        # Convert numeric fields to appropriate types
+        numeric_fields = ["temperature", "humidity", "pressure", "wifi_rssi", "uptime_seconds", "fan_pwm", "fans_active_level"]
+        for key in numeric_fields:
             if db_data.get(key) is not None:
                 try:
-                    db_data[key] = float(db_data[key])
-                except Exception:
+                    # Handle different numeric types
+                    if key in ["uptime_seconds", "fan_pwm", "fans_active_level", "wifi_rssi"]:
+                        db_data[key] = int(db_data[key])
+                    else:
+                        db_data[key] = float(db_data[key])
+                except (ValueError, TypeError):
                     logger.warning(
-                        f"Invalid float value for {key}: {db_data[key]}, setting to None"
+                        f"Invalid numeric value for {key}: {db_data[key]}, setting to None"
                     )
                     db_data[key] = None
 
-        # Ensure motion and switch are treated as text - explicitly convert to string if needed
-        if "motion" in db_data and db_data["motion"] is not None:
-            db_data["motion"] = str(db_data["motion"])
-            
-        if "switch" in db_data and db_data["switch"] is not None:
-            db_data["switch"] = str(db_data["switch"])
+        # Ensure text fields are treated as strings
+        text_fields = ["motion", "switch", "version", "uptime", "temp_sensor_type"]
+        for key in text_fields:
+            if key in db_data and db_data[key] is not None:
+                db_data[key] = str(db_data[key])
 
         # Rename timestamp to time for database schema compatibility
         if "timestamp" in db_data:
             db_data["time"] = db_data.pop("timestamp")
 
+        # Ensure all expected database fields exist with None as default
+        expected_fields = [
+            "time", "device_id", "event_type", "temperature", "humidity", 
+            "pressure", "temp_sensor_type", "motion", "switch", "version", "uptime",
+            "wifi_rssi", "uptime_seconds", "fan_pwm", "fans_active_level"
+        ]
+        
+        for field in expected_fields:
+            if field not in db_data:
+                db_data[field] = None
+
         # Debug output to check field values
-        logger.info(f"Storing data with motion={db_data.get('motion')} switch={db_data.get('switch')}")
+        logger.info(f"Storing {db_data['event_type']} data for device {db_data['device_id']} - "
+                   f"temp={db_data.get('temperature')} motion={db_data.get('motion')} "
+                   f"rssi={db_data.get('wifi_rssi')} uptime={db_data.get('uptime_seconds')}s")
 
         with db_conn.cursor() as cur:
             cur.execute(
                 """
                 INSERT INTO sensor_data (
                     time, device_id, event_type, temperature, humidity, 
-                    pressure, temp_sensor_type, motion, switch, version, uptime
+                    pressure, temp_sensor_type, motion, switch, version, uptime,
+                    wifi_rssi, uptime_seconds, fan_pwm, fans_active_level
                 )
                 VALUES (
                     %(time)s, %(device_id)s, %(event_type)s, %(temperature)s, %(humidity)s,
-                    %(pressure)s, %(temp_sensor_type)s, %(motion)s, %(switch)s, %(version)s, %(uptime)s
+                    %(pressure)s, %(temp_sensor_type)s, %(motion)s, %(switch)s, %(version)s, %(uptime)s,
+                    %(wifi_rssi)s, %(uptime_seconds)s, %(fan_pwm)s, %(fans_active_level)s
                 )
             """,
                 db_data,
             )
             db_conn.commit()
 
-        logger.info(f"Stored {db_data['event_type']} data for device {db_data['device_id']}")
+        logger.info(f"Successfully stored {db_data['event_type']} data for device {db_data['device_id']}")
 
-    except KeyError as e:
-        logger.error(f"Missing key in sensor data dictionary: {e}")
+    except psycopg2.Error as e:
+        logger.error(f"Database error storing sensor data: {e}")
+        logger.error(f"Data that caused error: {db_data}")
+        db_conn.rollback()
 
     except Exception as e:
-        logger.error(f"Error storing sensor data: {e}")
+        logger.error(f"Unexpected error storing sensor data: {e}")
         logger.error(f"Data that caused error: {db_data}")
         db_conn.rollback()
 
 
 def on_connect(client, userdata, flags, rc):
     logger.info(f"Connected with result code {rc}")
-    logger.info("Subscribing to iots4/#")  # Updated to match your topic
-    client.subscribe("iots4/#")
+    logger.info("Subscribing to iots6/#")  # Updated to match your topic
+    client.subscribe("iots6/#")
 
 
 def on_message(client, userdata, msg):
@@ -173,12 +194,14 @@ def on_message(client, userdata, msg):
 
         # Log processing time
         processing_time = time.time() - start_time
-        logger.debug(f"Message processing time: {processing_time} seconds")
+        logger.debug(f"Message processing time: {processing_time:.3f} seconds")
 
     except json.JSONDecodeError as e:
         logger.error(f"Error decoding JSON: {e}")
+        logger.error(f"Raw message: {message_text}")
     except Exception as e:
         logger.error(f"Error processing message: {e}")
+        logger.error(f"Raw message: {message_text}")
 
 
 def on_subscribe(client, userdata, mid, granted_qos):

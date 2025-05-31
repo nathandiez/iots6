@@ -1,3 +1,5 @@
+# vm.tf
+
 terraform {
   required_providers {
     proxmox = {

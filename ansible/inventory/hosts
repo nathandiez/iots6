@@ -1,5 +1,5 @@
 [iot_servers]
-your-vm-name ansible_host=YOUR_VM_IP
+nedv1-iots6 ansible_host=PLACEHOLDER
 
 [all:vars]
 ansible_python_interpreter=/usr/bin/python3

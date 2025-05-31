@@ -6,7 +6,7 @@ variable "vm_name" {
 variable "node_name" {
   description = "Name of the Proxmox node"
   type        = string
-  default     = "your-proxmox-node"
+  default     = "proxmox-asus"
 }
 
 variable "tags" {
@@ -59,7 +59,7 @@ variable "dns_servers" {
 variable "ssh_username" {
   description = "Username for SSH access"
   type        = string
-  default     = "your-username"
+  default     = "nathan"
 }
 
 variable "ssh_public_key_path" {
