@@ -17,6 +17,8 @@ fi
 # Source Proxmox environment variables
 source ./set-proxmox-env.sh
 
+# Export environment variables for Ansible
+export POSTGRES_PASSWORD MQTT_BROKER_IP MQTT_USER MQTT_PASSWORD API_URL API_KEY
 # Change to terraform directory
 cd "$(dirname "$0")/terraform"
 

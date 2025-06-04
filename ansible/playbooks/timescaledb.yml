@@ -6,7 +6,7 @@
     timescaledb_container_name: timescaledb
     postgres_db: iotdb
     postgres_user: iotuser
-    postgres_password: iotpass
+    postgres_password: "{{ lookup('env', 'POSTGRES_PASSWORD') | default('iotpass') }}"
     postgres_port: 5432
     timescale_data_dir: /home/{{ ansible_user | default('nathan') }}/timescaledb_data
     schema_dir: /home/{{ ansible_user | default('nathan') }}/timescaledb_schema
